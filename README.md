@@ -34,6 +34,8 @@ example invocations of most functions and classes. It is recommended that you re
 in the following order: `toy_examples`, `synthetic_experiments`, `data_explorations`, 
 `model_explorations`, `evaluations`, `sensitivity_analyses`, and `bubble_experiments`.
 
+To create the transition graph visualizations in `nb/data_explorations.ipynb`, you will need to install [pygraphviz](http://pygraphviz.github.io/).
+
 Documentation
 -------------
 
