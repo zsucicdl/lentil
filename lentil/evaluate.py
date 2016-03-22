@@ -143,7 +143,7 @@ class EvalResults(object):
         Get the test AUC of a model
 
         :param str model: The name of a model
-        :rtype float|None
+        :rtype: float|None
         :return: The test AUC of the model, or None if test results were not supplied
         """
 
@@ -154,7 +154,7 @@ class EvalResults(object):
         Get the test accuracy of a model
 
         :param str model: The name of a model
-        :rtype float|None
+        :rtype: float|None
         :return: The test accuracy of the model, or None if test results were not supplied
         """
 
@@ -165,7 +165,7 @@ class EvalResults(object):
         Get the standard error of the test accuracy of a model
 
         :param str model: The name of a model
-        :rtype float|None
+        :rtype: float|None
         :return: The standard error of the test accuracy of the model, or None if the test results
             were not supplied
         """
