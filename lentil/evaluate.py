@@ -32,13 +32,19 @@ class EvalResults(object):
     Class for wrapping the results of evaluation on the assessment outcome prediction task
     """
 
-    def __init__(self, raw_results, val_ixn_data, raw_test_results=None):
+    def __init__(self, raw_results, train_ixn_data, val_ixn_data, raw_test_results=None):
         """
         Initialize results object
 
         :param dict[str,list[(float,float,float,float)]] raw_results: A dictionary mapping model name to
             a list of tuples (training AUC, validation AUC, validation accuracy, 
             stdev of validation accuracy) across CV runs
+        
+        :param list[(list[int],list[int],list[float])] train_ixn_data: A tuple containing
+            (a list of dataframe row indices for training interactions,
+            a list of y_trues for training interactions,
+            a dictionary mapping model name to a list of probas_pred for training interactions) 
+            on each fold
 
         :param list[(list[int],list[int],list[float])] val_ixn_data: A tuple containing
             (a list of dataframe row indices for validation interactions,
@@ -46,11 +52,11 @@ class EvalResults(object):
             a dictionary mapping model name to a list of probas_pred for validation interactions) 
             on each fold
 
-
         :param dict[str,(float,float,float,float)]|None raw_test_results: A dictionary mapping model name to
             a tuple (training AUC, test AUC, test accuracy, stdev of test accuracy)
         """
         self.raw_results = raw_results
+        self.train_ixn_data = train_ixn_data
         self.val_ixn_data = val_ixn_data
         self.raw_test_results = raw_test_results if raw_test_results is not None else {}
 
@@ -205,6 +211,8 @@ def training_auc(
             datatools.AssessmentInteraction.MODULETYPE]
     train_y_true = train_assessment_interactions['outcome'] * 2 - 1
     train_probas_pred = model.assessment_pass_likelihoods(train_assessment_interactions)
+    train_y_true, train_probas_pred = zip(*[(y, p) for y, p in zip(
+        train_y_true, train_probas_pred) if not np.isnan(p)])
     y_true = [x for x, y in zip(train_y_true, train_probas_pred) if not np.isnan(y)]
     probas_pred = [y for y in train_probas_pred if not np.isnan(y)]
     if len(y_true) == 1:
@@ -296,7 +304,8 @@ def cross_validated_auc(
     # collect errors across CV runs
     err = {k: [] for k in models}
 
-    # collect indices and probas_pred of validation data on each fold
+    # collect indices and probas_pred of training/validation data on each fold
+    train_ixn_data = [None] * num_folds
     val_ixn_data = [None] * num_folds
 
     # define useful helper functions
@@ -493,6 +502,9 @@ def cross_validated_auc(
         val_ixn_data[fold_idx] = (list(val_interactions.index), copy.deepcopy(val_y_true)
                 , copy.deepcopy(val_probas_pred))
 
+        train_ixn_data[fold_idx] = (list(train_assessment_interactions.index), 
+                copy.deepcopy(train_y_true), copy.deepcopy(train_probas_pred))
+
         err = update_err(err)
 
         _logger.info('Running at %f seconds per fold', (time.time() - start_time) / (fold_idx+1))
@@ -518,5 +530,5 @@ def cross_validated_auc(
         test_err = None
     
 
-    return EvalResults(err, val_ixn_data, raw_test_results=test_err)
+    return EvalResults(err, train_ixn_data, val_ixn_data, raw_test_results=test_err)
 
