@@ -1,13 +1,13 @@
 Lentil - Latent Skill Embedding
 ===============================
 
-A package for training, evaluation, and visualization of the Latent Skill Embedding model. Read 
+A package for training, evaluation, and visualization of the Latent Skill Embedding model. Read
 more about the model at http://siddharth.io/lentil.
 
 Usage
 -----
 
-You can install the package's dependencies with 
+You can install the package's dependencies with
 
 ```
 pip install -r requirements.txt
@@ -29,9 +29,9 @@ tox
 Once installed in your environment, command-line interfaces for training and
 evaluation are available through `lse_train` and `lse_eval`. The appropriate format for input
 interaction log data is given in the documentation for `lentil.datatools.InteractionHistory`.
-IPython notebooks used to conduct experiments are available in the `nb` directory, and provide 
-example invocations of most functions and classes. It is recommended that you read the notebooks 
-in the following order: `toy_examples`, `synthetic_experiments`, `data_explorations`, 
+IPython notebooks used to conduct experiments are available in the `nb` directory, and provide
+example invocations of most functions and classes. It is recommended that you read the notebooks
+in the following order: `toy_examples`, `synthetic_experiments`, `data_explorations`,
 `model_explorations`, `evaluations`, `sensitivity_analyses`, and `bubble_experiments`.
 
 To create the transition graph visualizations in `nb/data_explorations.ipynb`, you will need to install [pygraphviz](http://pygraphviz.github.io/).
@@ -51,3 +51,17 @@ Questions and comments
 ----------------------
 
 Please contact the author at `sgr45 [at] cornell [dot] edu` if you have questions or find bugs.
+
+Citation
+--------
+If you find this software useful in your work, we kindly request that you cite the following [paper](http://arxiv.org/abs/1602.07029):
+
+```
+@InProceedings{Reddy/etal/16c,
+  title={Latent Skill Embedding for Personalized Lesson Sequence Recommendation},
+  author={Reddy, Siddharth and Labutov, Igor and Joachims, Thorsten},
+  booktitle={Arxiv 1602.07029},
+  year={2016},
+  url={http://arxiv.org/abs/1602.07029}
+}
+```
