@@ -13,7 +13,8 @@ import math
 import copy
 
 from matplotlib import pyplot as plt
-from sklearn import cross_validation, metrics
+from sklearn.model_selection import cross_validate
+from sklearn import metrics
 from scipy import stats
 import numpy as np
 
@@ -478,7 +479,7 @@ def cross_validated_auc(
         id_of_nontest_student_idx = history.id_of_nontest_student_idx
     else:
         id_of_nontest_student_idx = history._student_inv_idx
-    kf = cross_validation.KFold(
+    kf = cross_validate.KFold(
             len(id_of_nontest_student_idx), n_folds=num_folds, shuffle=True)
 
     start_time = time.time()

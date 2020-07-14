@@ -12,7 +12,6 @@ import logging
 
 import numpy as np
 from scipy import sparse
-#from sklearn import cross_validation
 from sklearn.model_selection import cross_validate
 from sklearn.linear_model import LogisticRegression
 
@@ -699,7 +698,7 @@ class IRTModel(SkillModel):
             :rtype: float
             :return: Average log-likelihood on validation set
             """
-            train_idxes, val_idxes = cross_validation.train_test_split(
+            train_idxes, val_idxes = cross_validate.train_test_split(
                 np.arange(0, len(self.history), 1), train_size=0.7)
             model = LogisticRegression(penalty='l2', C=C)
             X_train = self.feature_matrix_from_interactions(self.history.ix[train_idxes])
