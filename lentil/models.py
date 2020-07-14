@@ -12,7 +12,8 @@ import logging
 
 import numpy as np
 from scipy import sparse
-from sklearn import cross_validation
+#from sklearn import cross_validation
+from sklearn.model_selection import cross_validate
 from sklearn.linear_model import LogisticRegression
 
 from . import datatools
