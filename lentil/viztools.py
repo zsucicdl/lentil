@@ -24,7 +24,7 @@ def plot_embedding(
     show_lessons=None,
     show_prereqs=None,
     show_concepts=None,
-    show_student_ids=False,
+    show_user_ids=False,
     show_assessment_ids=False,
     show_lesson_ids=False,
     show_concept_ids=False,
@@ -95,8 +95,8 @@ def plot_embedding(
     if show_concepts and not model.using_graph_prior:
         raise ValueError(
             'Cannot show concepts because model does not use a graph prior!')
-    if show_student_ids and not show_students:
-        raise ValueError('Cannot show student_ids without students!')
+    if show_user_ids and not show_students:
+        raise ValueError('Cannot show user_ids without students!')
     if show_assessment_ids and not show_assessments:
         raise ValueError('Cannot show assessment_ids without assessments!')
     if show_lesson_ids and not show_lessons and not show_prereqs:
@@ -119,16 +119,16 @@ def plot_embedding(
             student_embeddings_x, student_embeddings_y,
             alpha=alpha, marker='o', s=size, label='student')
 
-        if show_student_ids:
-            for student_id in model.history.iter_students():
-                student_idx = model.history.idx_of_student_id(student_id)
-                student_x = student_embeddings_x[student_idx]
-                student_y = student_embeddings_y[student_idx]
-                student_id_x = student_x + id_padding_x
-                student_id_y = student_y + id_padding_y
-                ax.annotate(student_id, xy=(
+        if show_user_ids:
+            for user_id in model.history.iter_students():
+                user_idx = model.history.idx_of_user_id(user_id)
+                student_x = student_embeddings_x[user_idx]
+                student_y = student_embeddings_y[user_idx]
+                user_id_x = student_x + id_padding_x
+                user_id_y = student_y + id_padding_y
+                ax.annotate(user_id, xy=(
                     student_x, student_y), xytext=(
-                    student_id_x, student_id_y))
+                    user_id_x, user_id_y))
 
     if show_assessments:
         assessment_embeddings_x = model.assessment_embeddings[:, 0]
@@ -137,7 +137,7 @@ def plot_embedding(
             num_assessments = model.history.num_assessments()
             pass_rates = [model.history.assessment_pass_rate(
                 model.history.id_of_assessment_idx(
-                    i), timestep if timestep!=-1 else None) for i in xrange(
+                    i), timestep if timestep!=-1 else None) for i in range(
                 num_assessments)]
             ax.scatter(
                 assessment_embeddings_x,

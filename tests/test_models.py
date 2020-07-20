@@ -79,8 +79,8 @@ class TestModels(unittest.TestCase):
 
             model.fit(estimator)
 
-            lee = model.student_embeddings[model.history.idx_of_student_id('Lee'), 0, 1:]
-            carter = model.student_embeddings[model.history.idx_of_student_id('Carter'), 0, 1:]
+            lee = model.student_embeddings[model.history.idx_of_user_id('Lee'), 0, 1:]
+            carter = model.student_embeddings[model.history.idx_of_user_id('Carter'), 0, 1:]
 
             a1 = model.assessment_embeddings[model.history.idx_of_assessment_id('A1'), 0]
             a2 = model.assessment_embeddings[model.history.idx_of_assessment_id('A2'), 0]
@@ -140,10 +140,10 @@ class TestModels(unittest.TestCase):
 
             model.fit(estimator)
 
-            mclovin = model.student_embeddings[model.history.idx_of_student_id('McLovin'), :, 1]
-            fogell = model.student_embeddings[model.history.idx_of_student_id('Fogell'), :, 1]
-            seth = model.student_embeddings[model.history.idx_of_student_id('Seth'), :, 1]
-            evan = model.student_embeddings[model.history.idx_of_student_id('Evan'), :, 1]
+            mclovin = model.student_embeddings[model.history.idx_of_user_id('McLovin'), :, 1]
+            fogell = model.student_embeddings[model.history.idx_of_user_id('Fogell'), :, 1]
+            seth = model.student_embeddings[model.history.idx_of_user_id('Seth'), :, 1]
+            evan = model.student_embeddings[model.history.idx_of_user_id('Evan'), :, 1]
 
             a1 = model.assessment_embeddings[model.history.idx_of_assessment_id('A1'), :]
             a2 = model.assessment_embeddings[model.history.idx_of_assessment_id('A2'), :]
@@ -204,12 +204,12 @@ class TestModels(unittest.TestCase):
 
             model.fit(estimator)
 
-            mclovin = model.student_embeddings[model.history.idx_of_student_id('McLovin'), :, 1]
-            fogell = model.student_embeddings[model.history.idx_of_student_id('Fogell'), :, 1]
-            seth = model.student_embeddings[model.history.idx_of_student_id('Seth'), :, 1]
-            evan = model.student_embeddings[model.history.idx_of_student_id('Evan'), :, 1]
-            slater = model.student_embeddings[model.history.idx_of_student_id('Slater'), :, 1:]
-            michaels = model.student_embeddings[model.history.idx_of_student_id('Michaels'), :, 1:]
+            mclovin = model.student_embeddings[model.history.idx_of_user_id('McLovin'), :, 1]
+            fogell = model.student_embeddings[model.history.idx_of_user_id('Fogell'), :, 1]
+            seth = model.student_embeddings[model.history.idx_of_user_id('Seth'), :, 1]
+            evan = model.student_embeddings[model.history.idx_of_user_id('Evan'), :, 1]
+            slater = model.student_embeddings[model.history.idx_of_user_id('Slater'), :, 1:]
+            michaels = model.student_embeddings[model.history.idx_of_user_id('Michaels'), :, 1:]
 
             a1 = model.assessment_embeddings[model.history.idx_of_assessment_id('A1'), :]
             a2 = model.assessment_embeddings[model.history.idx_of_assessment_id('A2'), :]
@@ -281,10 +281,10 @@ class TestModels(unittest.TestCase):
 
             model.fit(estimator)
 
-            mclovin = model.student_embeddings[model.history.idx_of_student_id('McLovin'), :, 1:]
-            fogell = model.student_embeddings[model.history.idx_of_student_id('Fogell'), :, 1:]
-            seth = model.student_embeddings[model.history.idx_of_student_id('Seth'), :, 1:]
-            evan = model.student_embeddings[model.history.idx_of_student_id('Evan'), :, 1:]
+            mclovin = model.student_embeddings[model.history.idx_of_user_id('McLovin'), :, 1:]
+            fogell = model.student_embeddings[model.history.idx_of_user_id('Fogell'), :, 1:]
+            seth = model.student_embeddings[model.history.idx_of_user_id('Seth'), :, 1:]
+            evan = model.student_embeddings[model.history.idx_of_user_id('Evan'), :, 1:]
 
             a1 = model.assessment_embeddings[model.history.idx_of_assessment_id('A1'), :]
             a2 = model.assessment_embeddings[model.history.idx_of_assessment_id('A2'), :]
@@ -296,17 +296,17 @@ class TestModels(unittest.TestCase):
             self.assertTrue((mclovin[:, 0] > a1).all())
             self.assertTrue((mclovin[:, 0] > a2).all())
             self.assertTrue((mclovin[:, 0] < a3).any())
-            for i in xrange(3):
+            for i in range(3):
                 self.assertTrue((fogell[:, 0] <= model.assessment_embeddings[i, :]).any())
                 self.assertTrue((fogell[:, 1] <= model.assessment_embeddings[i, :]).any())
 
             eps = 0.1
-            for i in xrange(2):
+            for i in range(2):
                 self.assertTrue((seth[:, i] >= a1 - eps).all() and (seth[:, i] > a1 - eps).any())
                 self.assertTrue((seth[:, i] < a2).any())
                 self.assertTrue((seth[:, i] < a3).any())
 
-            for i in xrange(2):
+            for i in range(2):
                 self.assertTrue((evan[:, i] >= a2 - eps).all() and (evan[:, i] > a2 - eps).any())
                 self.assertTrue((evan[:, i] < a1).any())
                 self.assertTrue((evan[:, i] < a3).any())

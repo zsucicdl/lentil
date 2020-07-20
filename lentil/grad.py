@@ -54,11 +54,11 @@ def without_scipy_without_lessons(
     a parameter estimation routine that uses gradient descent for optimization
 
     :param (np.array,np.array,np.array) assessment_interactions:
-        For each assessment interaction, (student_idx, assessment_idx, outcome),
+        For each assessment interaction, (user_idx, assessment_idx, outcome),
         where outcome is -1 or 1
 
     :param (np.array,np.array,np.array) lesson_interactions:
-        For each lesson interaction, (student_idx, lesson_idx, time_since_previous_interaction)
+        For each lesson interaction, (user_idx, lesson_idx, time_since_previous_interaction)
 
     :param np.array|float learning_update_variance:
         Variance of the Gaussian learning update. If float, then the variance
@@ -203,17 +203,17 @@ def without_scipy_without_lessons(
 
         # split assessment interactions into students, assessments, outcomes
         (
-            student_idxes_for_assessment_ixns,
+            user_idxes_for_assessment_ixns,
             assessment_idxes_for_assessment_ixns,
             outcomes_for_assessment_ixns) = assessment_interactions
 
         # use dummy lesson interactions to get students in temporal process
-        student_idxes_for_temporal_process, _, _ = lesson_interactions
+        user_idxes_for_temporal_process, _, _ = lesson_interactions
 
         # get biases for assessment interactions
         if using_bias:
             student_biases = param_vals[models.STUDENT_BIASES][\
-                    student_idxes_for_assessment_ixns // num_timesteps][:, None]
+                    user_idxes_for_assessment_ixns // num_timesteps][:, None]
             assessment_biases = param_vals[models.ASSESSMENT_BIASES][\
                     assessment_idxes_for_assessment_ixns][:, None]
         else:
@@ -232,7 +232,7 @@ def without_scipy_without_lessons(
 
         # get the student embedding for each assessment interaction
         student_embeddings_for_assessment_ixns = \
-                student_embeddings[student_idxes_for_assessment_ixns, :]
+                student_embeddings[user_idxes_for_assessment_ixns, :]
 
         # compute the dot product of the student embedding
         # and assessment embedding for each interaction
@@ -249,15 +249,15 @@ def without_scipy_without_lessons(
         one_plus_exp_diff = 1 + exp_diff
         mult_diff = outcomes * exp_diff / one_plus_exp_diff
 
-        using_temporal_process = len(student_idxes_for_temporal_process) > 0
+        using_temporal_process = len(user_idxes_for_temporal_process) > 0
         if using_temporal_process:
             # get embeddings of student states resulting from lesson interactions
             curr_student_embeddings_for_lesson_ixns = \
-                    student_embeddings[student_idxes_for_temporal_process, :]
+                    student_embeddings[user_idxes_for_temporal_process, :]
 
             # get embeddings of student states prior to lesson interactions
             prev_student_embeddings_for_lesson_ixns = \
-                    student_embeddings[student_idxes_for_temporal_process - 1, :]
+                    student_embeddings[user_idxes_for_temporal_process - 1, :]
 
             # compute intermediate quantities for the gradient that get reused
             diffs = curr_student_embeddings_for_lesson_ixns - \
@@ -446,11 +446,11 @@ def without_scipy_with_prereqs(
     a parameter estimation routine that uses gradient descent for optimization
 
     :param (np.array,np.array,np.array) assessment_interactions:
-        For each assessment interaction, (student_idx, assessment_idx, outcome),
+        For each assessment interaction, (user_idx, assessment_idx, outcome),
         where outcome is -1 or 1
 
     :param (np.array,np.array,np.array) lesson_interactions:
-        For each lesson interaction, (student_idx, lesson_idx, time_since_previous_interaction)
+        For each lesson interaction, (user_idx, lesson_idx, time_since_previous_interaction)
 
     :param np.array|float learning_update_variance:
         Variance of the Gaussian learning update. If float, then the variance
@@ -598,17 +598,17 @@ def without_scipy_with_prereqs(
 
         # split assessment interactions into students, assessments, outcomes
         (
-            student_idxes_for_assessment_ixns,
+            user_idxes_for_assessment_ixns,
             assessment_idxes_for_assessment_ixns,
             outcomes_for_assessment_ixns) = assessment_interactions
 
         # split lesson interactions into students, lessons
-        student_idxes_for_lesson_ixns, lesson_idxes_for_lesson_ixns, _ = lesson_interactions
+        user_idxes_for_lesson_ixns, lesson_idxes_for_lesson_ixns, _ = lesson_interactions
 
         # get biases for assessment interactions
         if using_bias:
             student_biases = param_vals[models.STUDENT_BIASES][\
-                    student_idxes_for_assessment_ixns // num_timesteps][:, None]
+                    user_idxes_for_assessment_ixns // num_timesteps][:, None]
             assessment_biases = param_vals[models.ASSESSMENT_BIASES][\
                     assessment_idxes_for_assessment_ixns][:, None]
         else:
@@ -627,7 +627,7 @@ def without_scipy_with_prereqs(
 
         # get the student embedding for each assessment interaction
         student_embeddings_for_assessment_ixns = \
-                student_embeddings[student_idxes_for_assessment_ixns, :]
+                student_embeddings[user_idxes_for_assessment_ixns, :]
 
         # compute the dot product of the student embedding
         # and assessment embedding for each interaction
@@ -652,11 +652,11 @@ def without_scipy_with_prereqs(
 
         # get embeddings of student states resulting from lesson interactions
         curr_student_embeddings_for_lesson_ixns = \
-                student_embeddings[student_idxes_for_lesson_ixns, :]
+                student_embeddings[user_idxes_for_lesson_ixns, :]
 
         # get embeddings of student states prior to lesson interactions
         prev_student_embeddings_for_lesson_ixns = \
-                student_embeddings[student_idxes_for_lesson_ixns - 1, :]
+                student_embeddings[user_idxes_for_lesson_ixns - 1, :]
 
         # compute the L2 norm of the lesson embedding for each lesson interaction
         prereq_embedding_norms_for_lesson_ixns = np.linalg.norm(
@@ -915,11 +915,11 @@ def without_scipy_without_prereqs(
     a parameter estimation routine that uses gradient descent for optimization
 
     :param (np.array,np.array,np.array) assessment_interactions:
-        For each assessment interaction, (student_idx, assessment_idx, outcome),
+        For each assessment interaction, (user_idx, assessment_idx, outcome),
         where outcome is -1 or 1
 
     :param (np.array,np.array,np.array) lesson_interactions:
-        For each lesson interaction, (student_idx, lesson_idx, time_since_previous_interaction)
+        For each lesson interaction, (user_idx, lesson_idx, time_since_previous_interaction)
 
     :param np.array|float learning_update_variance:
         Variance of the Gaussian learning update. If float, then the variance
@@ -1066,17 +1066,17 @@ def without_scipy_without_prereqs(
 
         # split assessment interactions into students, assessments, outcomes
         (
-            student_idxes_for_assessment_ixns,
+            user_idxes_for_assessment_ixns,
             assessment_idxes_for_assessment_ixns,
             outcomes_for_assessment_ixns) = assessment_interactions
 
         # split lesson interactions into students, lessons
-        student_idxes_for_lesson_ixns, lesson_idxes_for_lesson_ixns, _ = lesson_interactions
+        user_idxes_for_lesson_ixns, lesson_idxes_for_lesson_ixns, _ = lesson_interactions
 
         # get biases for assessment interactions
         if using_bias:
             student_biases = param_vals[models.STUDENT_BIASES][\
-                    student_idxes_for_assessment_ixns // num_timesteps][:, None]
+                    user_idxes_for_assessment_ixns // num_timesteps][:, None]
             assessment_biases = param_vals[models.ASSESSMENT_BIASES][\
                     assessment_idxes_for_assessment_ixns][:, None]
         else:
@@ -1095,7 +1095,7 @@ def without_scipy_without_prereqs(
 
         # get the student embedding for each assessment interaction
         student_embeddings_for_assessment_ixns = \
-                student_embeddings[student_idxes_for_assessment_ixns, :]
+                student_embeddings[user_idxes_for_assessment_ixns, :]
 
         # compute the dot product of the student embedding
         # and assessment embedding for each interaction
@@ -1117,11 +1117,11 @@ def without_scipy_without_prereqs(
 
         # get embeddings of student states resulting from lesson interactions
         curr_student_embeddings_for_lesson_ixns = \
-                student_embeddings[student_idxes_for_lesson_ixns, :]
+                student_embeddings[user_idxes_for_lesson_ixns, :]
 
         # get embeddings of student states prior to lesson interactions
         prev_student_embeddings_for_lesson_ixns = \
-                student_embeddings[student_idxes_for_lesson_ixns - 1, :]
+                student_embeddings[user_idxes_for_lesson_ixns - 1, :]
 
         # compute intermediate quantities for the gradient that get reused
         diffs = curr_student_embeddings_for_lesson_ixns - prev_student_embeddings_for_lesson_ixns \
@@ -1339,11 +1339,11 @@ def with_scipy_without_lessons(
         A dictionary mapping a parameter's name to the shape of its np.ndarray
 
     :param (np.array,np.array,np.array) assessment_interactions:
-        For each assessment interaction, (student_idx, assessment_idx, outcome),
+        For each assessment interaction, (user_idx, assessment_idx, outcome),
         where outcome is -1 or 1
 
     :param (np.array,np.array,np.array) lesson_interactions:
-        For each lesson interaction, (student_idx, lesson_idx, time_since_previous_interaction)
+        For each lesson interaction, (user_idx, lesson_idx, time_since_previous_interaction)
 
     :param np.array|float learning_update_variance:
         Variance of the Gaussian learning update. If float, then the variance
@@ -1487,12 +1487,12 @@ def with_scipy_without_lessons(
 
     # split assessment interactions into students, assessments, outcomes
     (
-        student_idxes_for_assessment_ixns,
+        user_idxes_for_assessment_ixns,
         assessment_idxes_for_assessment_ixns,
         outcomes_for_assessment_ixns) = assessment_interactions
 
     # use dummy lesson interactions to get students in temporal process
-    student_idxes_for_temporal_process, _, _ = lesson_interactions
+    user_idxes_for_temporal_process, _, _ = lesson_interactions
 
     if not using_bias:
         # zero out bias terms, so that they definitely have no effect
@@ -1504,7 +1504,7 @@ def with_scipy_without_lessons(
     student_biases = np.reshape(
         param_vals[last_assessment_embedding_idx:last_student_bias_idx],
         param_shapes[models.STUDENT_BIASES])[(
-        student_idxes_for_assessment_ixns // num_timesteps)][:, None]
+        user_idxes_for_assessment_ixns // num_timesteps)][:, None]
     assessment_biases = np.reshape(
         param_vals[last_student_bias_idx:last_assessment_bias_idx],
         param_shapes[models.ASSESSMENT_BIASES])[(
@@ -1523,7 +1523,7 @@ def with_scipy_without_lessons(
 
     # get the student embedding for each assessment interaction
     student_embeddings_for_assessment_ixns = (
-        student_embeddings[student_idxes_for_assessment_ixns, :])
+        student_embeddings[user_idxes_for_assessment_ixns, :])
 
     # compute the dot product of the student embedding
     # and assessment embedding for each interaction
@@ -1540,15 +1540,15 @@ def with_scipy_without_lessons(
     one_plus_exp_diff = 1 + exp_diff
     mult_diff = outcomes * exp_diff / one_plus_exp_diff
 
-    using_temporal_process = len(student_idxes_for_temporal_process) > 0
+    using_temporal_process = len(user_idxes_for_temporal_process) > 0
     if using_temporal_process:
         # get embeddings of student states resulting from lesson interactions
         curr_student_embeddings_for_lesson_ixns = \
-                student_embeddings[student_idxes_for_temporal_process, :]
+                student_embeddings[user_idxes_for_temporal_process, :]
 
         # get embeddings of student states prior to lesson interactions
         prev_student_embeddings_for_lesson_ixns = \
-                student_embeddings[student_idxes_for_temporal_process - 1, :]
+                student_embeddings[user_idxes_for_temporal_process - 1, :]
 
         # compute intermediate quantities for the gradient that get reused
         diffs = curr_student_embeddings_for_lesson_ixns - prev_student_embeddings_for_lesson_ixns \
@@ -1730,11 +1730,11 @@ def with_scipy_with_prereqs(
         A dictionary mapping a parameter's name to the shape of its np.ndarray
 
     :param (np.array,np.array,np.array) assessment_interactions:
-        For each assessment interaction, (student_idx, assessment_idx, outcome),
+        For each assessment interaction, (user_idx, assessment_idx, outcome),
         where outcome is -1 or 1
 
     :param (np.array,np.array,np.array) lesson_interactions:
-        For each lesson interaction, (student_idx, lesson_idx, time_since_previous_interaction)
+        For each lesson interaction, (user_idx, lesson_idx, time_since_previous_interaction)
 
     :param np.array|float learning_update_variance:
         Variance of the Gaussian learning update. If float, then the variance
@@ -1888,12 +1888,12 @@ def with_scipy_with_prereqs(
 
     # split assessment interactions into students, assessments, outcomes
     (
-        student_idxes_for_assessment_ixns,
+        user_idxes_for_assessment_ixns,
         assessment_idxes_for_assessment_ixns,
         outcomes_for_assessment_ixns) = assessment_interactions
 
     # split lesson interactions into students, lessons
-    student_idxes_for_lesson_ixns, lesson_idxes_for_lesson_ixns, _ = lesson_interactions
+    user_idxes_for_lesson_ixns, lesson_idxes_for_lesson_ixns, _ = lesson_interactions
 
     if not using_bias:
         # zero out bias terms, so that they definitely have no effect
@@ -1905,7 +1905,7 @@ def with_scipy_with_prereqs(
     student_biases = np.reshape(
         param_vals[last_prereq_embedding_idx:last_student_bias_idx],
         param_shapes[models.STUDENT_BIASES])[(
-        student_idxes_for_assessment_ixns // num_timesteps)][:, None]
+        user_idxes_for_assessment_ixns // num_timesteps)][:, None]
     assessment_biases = np.reshape(
         param_vals[last_student_bias_idx:last_assessment_bias_idx],
         param_shapes[models.ASSESSMENT_BIASES])[assessment_idxes_for_assessment_ixns][:, None]
@@ -1923,7 +1923,7 @@ def with_scipy_with_prereqs(
 
     # get the student embedding for each assessment interaction
     student_embeddings_for_assessment_ixns = (
-        student_embeddings[student_idxes_for_assessment_ixns, :])
+        student_embeddings[user_idxes_for_assessment_ixns, :])
 
     # compute the dot product of the student embedding
     # and assessment embedding for each interaction
@@ -1947,11 +1947,11 @@ def with_scipy_with_prereqs(
     prereq_embeddings_for_lesson_ixns = prereq_embeddings[lesson_idxes_for_lesson_ixns, :]
 
     # get embeddings of student states resulting from lesson interactions
-    curr_student_embeddings_for_lesson_ixns = student_embeddings[student_idxes_for_lesson_ixns, :]
+    curr_student_embeddings_for_lesson_ixns = student_embeddings[user_idxes_for_lesson_ixns, :]
 
     # get embeddings of student states prior to lesson interactions
     prev_student_embeddings_for_lesson_ixns = \
-            student_embeddings[student_idxes_for_lesson_ixns - 1, :]
+            student_embeddings[user_idxes_for_lesson_ixns - 1, :]
 
     # compute the L2 norm of the lesson embedding for each lesson interaction
     prereq_embedding_norms_for_lesson_ixns = np.linalg.norm(
@@ -2201,11 +2201,11 @@ def with_scipy_without_prereqs(
         A dictionary mapping a parameter's name to the shape of its np.ndarray
 
     :param (np.array,np.array,np.array) assessment_interactions:
-        For each assessment interaction, (student_idx, assessment_idx, outcome),
+        For each assessment interaction, (user_idx, assessment_idx, outcome),
         where outcome is -1 or 1
 
     :param (np.array,np.array,np.array) lesson_interactions:
-        For each lesson interaction, (student_idx, lesson_idx, time_since_previous_interaction)
+        For each lesson interaction, (user_idx, lesson_idx, time_since_previous_interaction)
 
     :param np.array|float learning_update_variance:
         Variance of the Gaussian learning update. If float, then the variance
@@ -2354,12 +2354,12 @@ def with_scipy_without_prereqs(
 
     # split assessment interactions into students, assessments, outcomes
     (
-        student_idxes_for_assessment_ixns,
+        user_idxes_for_assessment_ixns,
         assessment_idxes_for_assessment_ixns,
         outcomes_for_assessment_ixns) = assessment_interactions
 
     # split lesson interactions into students, lessons
-    student_idxes_for_lesson_ixns, lesson_idxes_for_lesson_ixns, _ = lesson_interactions
+    user_idxes_for_lesson_ixns, lesson_idxes_for_lesson_ixns, _ = lesson_interactions
 
     if not using_bias:
         # zero out bias terms, so that they definitely have no effect
@@ -2371,7 +2371,7 @@ def with_scipy_without_prereqs(
     student_biases = np.reshape(
         param_vals[last_lesson_embedding_idx:last_student_bias_idx],
         param_shapes[models.STUDENT_BIASES])[(
-        student_idxes_for_assessment_ixns // num_timesteps)][:, None]
+        user_idxes_for_assessment_ixns // num_timesteps)][:, None]
     assessment_biases = np.reshape(
         param_vals[last_student_bias_idx:last_assessment_bias_idx],
         param_shapes[models.ASSESSMENT_BIASES])[(
@@ -2390,7 +2390,7 @@ def with_scipy_without_prereqs(
 
     # get the student embedding for each assessment interaction
     student_embeddings_for_assessment_ixns = \
-            student_embeddings[student_idxes_for_assessment_ixns, :]
+            student_embeddings[user_idxes_for_assessment_ixns, :]
 
     # compute the dot product of the student embedding
     # and assessment embedding for each interaction
@@ -2411,11 +2411,11 @@ def with_scipy_without_prereqs(
     lesson_embeddings_for_lesson_ixns = lesson_embeddings[lesson_idxes_for_lesson_ixns, :]
 
     # get embeddings of student states resulting from lesson interactions
-    curr_student_embeddings_for_lesson_ixns = student_embeddings[student_idxes_for_lesson_ixns, :]
+    curr_student_embeddings_for_lesson_ixns = student_embeddings[user_idxes_for_lesson_ixns, :]
 
     # get embeddings of student states prior to lesson interactions
     prev_student_embeddings_for_lesson_ixns = \
-            student_embeddings[student_idxes_for_lesson_ixns - 1, :]
+            student_embeddings[user_idxes_for_lesson_ixns - 1, :]
 
     # compute intermediate quantities for the gradient that get reused
     diffs = curr_student_embeddings_for_lesson_ixns - (

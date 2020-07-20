@@ -6,26 +6,24 @@ Module for skill model evaluation
 
 from __future__ import division
 
-import logging
-import random
-import time
-import math
 import copy
+import logging
+import math
+import time
 
-from matplotlib import pyplot as plt
-from sklearn.model_selection import cross_validate
-from sklearn import metrics
-from scipy import stats
 import numpy as np
+from matplotlib import pyplot as plt
+from scipy import stats
+from sklearn import metrics
+from sklearn.model_selection import KFold
 
-from . import datatools
-
+import datatools
 
 _logger = logging.getLogger(__name__)
 
-# students with fewer than [MIN_NUM_TIMESTEPS_IN_STUDENT_HISTORY] timesteps
+# students with fewer than [MIN_NUM_timestepS_IN_STUDENT_HISTORY] timesteps
 # in their history need to be filtered out before calling cross_validated_auc
-MIN_NUM_TIMESTEPS_IN_STUDENT_HISTORY = 2
+MIN_NUM_timestepS_IN_STUDENT_HISTORY = 2
 
 
 class EvalResults(object):
@@ -84,7 +82,7 @@ class EvalResults(object):
 
         val_aucs = np.array([t[1] for t in self.raw_results[model] if t is not None])
         return val_aucs[~np.isnan(val_aucs)]
-    
+
     def training_auc_mean(self, model):
         """
         Compute mean training AUC across CV runs
@@ -143,7 +141,7 @@ class EvalResults(object):
         """
 
         return stats.ttest_ind(
-                self.validation_aucs(model_a), self.validation_aucs(model_b), equal_var=True)[1]
+            self.validation_aucs(model_a), self.validation_aucs(model_b), equal_var=True)[1]
 
     def test_auc(self, model):
         """
@@ -194,10 +192,11 @@ class EvalResults(object):
         combined_raw_test_results.update(other_results.raw_test_results)
         return EvalResults(combined_raw_results)
 
+
 def training_auc(
-    model, 
-    history,
-    plot_roc_curve=True):
+        model,
+        history,
+        plot_roc_curve=True):
     """
     Compute the training AUC of a trained model on an interaction history
 
@@ -209,7 +208,7 @@ def training_auc(
     """
 
     train_assessment_interactions = history.data[history.data['module_type'] == \
-            datatools.AssessmentInteraction.MODULETYPE]
+                                                 datatools.AssessmentInteraction.MODULETYPE]
     train_y_true = train_assessment_interactions['outcome'] * 2 - 1
     train_probas_pred = model.assessment_pass_likelihoods(train_assessment_interactions)
     train_y_true, train_probas_pred = zip(*[(y, p) for y, p in zip(
@@ -218,7 +217,7 @@ def training_auc(
     probas_pred = [y for y in train_probas_pred if not np.isnan(y)]
     if len(y_true) == 1:
         raise ValueError('Tried computing AUC with only one prediction!')
-    
+
     try:
         train_fpr, train_tpr, _ = metrics.roc_curve(y_true, probas_pred)
         train_roc_auc = metrics.auc(train_fpr, train_tpr)
@@ -243,11 +242,11 @@ def training_auc(
 
 
 def cross_validated_auc(
-    model_builders,
-    history,
-    num_folds=10,
-    random_truncations=False,
-    size_of_test_set=0.2):
+        model_builders,
+        history,
+        num_folds=10,
+        random_truncations=False,
+        size_of_test_set=0.2):
     """
     Use k-fold cross-validation to evaluate the predictive power of an
     embedding model on an interaction history
@@ -285,7 +284,7 @@ def cross_validated_auc(
     num_students = history.num_students()
     if num_folds > num_students:
         raise ValueError('Too many folds! Must be at most num_students ({}) not {}'.format(
-                         num_students, num_folds))
+            num_students, num_folds))
 
     # initialize persistent variables
     df = history.data
@@ -310,12 +309,12 @@ def cross_validated_auc(
     val_ixn_data = [None] * num_folds
 
     # define useful helper functions
-    def get_training_and_validation_sets(left_in_student_ids, left_out_student_ids):
+    def get_training_and_validation_sets(left_in_user_ids, left_out_user_ids):
         """
         Carve out training/validation sets by truncating the histories of left-out students
 
-        :param set[str] left_in_student_ids: Left-in students
-        :param set[str] left_out_student_ids: Left-out students
+        :param set[str] left_in_user_ids: Left-in students
+        :param set[str] left_out_user_ids: Left-out students
         :rtype: (pd.DataFrame,pd.DataFrame,datatools.SplitHistory,pd.DataFrame)
         :return:
             (assessment interactions in training set,
@@ -325,20 +324,20 @@ def cross_validated_auc(
         """
 
         # prepare for left-out student history truncations
-        not_in_beginning = df['timestep'] > MIN_NUM_TIMESTEPS_IN_STUDENT_HISTORY
+        not_in_beginning = df['timestep'] > MIN_NUM_timestepS_IN_STUDENT_HISTORY
         is_assessment_ixn = df['module_type'] == datatools.AssessmentInteraction.MODULETYPE
-        left_out = df['student_id'].isin(left_out_student_ids)
-        grouped = df[not_in_beginning & is_assessment_ixn & left_out].groupby('student_id')
+        left_out = df['user_id'].isin(left_out_user_ids)
+        grouped = df[not_in_beginning & is_assessment_ixn & left_out].groupby('user_id')
 
-        if len(grouped) < len(left_out_student_ids):
+        if len(grouped) < len(left_out_user_ids):
             # at least one student has no assessment ixns after the second timestep
             raise ValueError('Need to filter out students with too few interactions!')
 
         if random_truncations:
             # truncate student history at random location
-            # after timestep [MIN_NUM_TIMESTEPS_IN_STUDENT_HISTORY]
+            # after timestep [MIN_NUM_timestepS_IN_STUDENT_HISTORY]
             student_cut_loc = grouped.timestep.apply(lambda x: np.maximum(
-                MIN_NUM_TIMESTEPS_IN_STUDENT_HISTORY, np.random.choice(x))) - 1
+                MIN_NUM_timestepS_IN_STUDENT_HISTORY, np.random.choice(x))) - 1
         else:
             # truncate just before the last batch of assessment ixns for each student
             student_cut_loc = grouped.timestep.max() - 1
@@ -346,23 +345,25 @@ def cross_validated_auc(
         # get timesteps where left-out student histories get truncated
         student_cut_loc.name = 'student_cut_loc'
         truncations = df.join(
-            student_cut_loc, on='student_id')['student_cut_loc'].fillna(np.nan, inplace=False)
+            student_cut_loc, on='user_id')['student_cut_loc'].fillna(np.nan, inplace=False)
 
         # get training set, which consists of full student histories
         # for "left-in" students, and truncated histories for "left-out" students
-        left_in = df['student_id'].isin(left_in_student_ids)
+        left_in = df['user_id'].isin(left_in_user_ids)
         filtered_history = df[left_in | (left_out & ((
-            df['timestep'] <= truncations) | ((df['timestep'] == truncations+1) & (
-                df['module_type'] == datatools.LessonInteraction.MODULETYPE))))]
+                                                             df['timestep'] <= truncations) | (
+                                                                 (df['timestep'] == truncations + 1) & (
+                                                                 df[
+                                                                     'module_type'] == datatools.LessonInteraction.MODULETYPE))))]
 
         # split training set into assessment ixns and lesson ixns
         split_history = history.split_interactions_by_type(
-                filtered_history=filtered_history,
-                insert_dummy_lesson_ixns=False)
+            filtered_history=filtered_history,
+            insert_dummy_lesson_ixns=False)
 
         # get assessment ixns in training set
         train_assessment_interactions = filtered_history[
-            filtered_history['module_type']==datatools.AssessmentInteraction.MODULETYPE]
+            filtered_history['module_type'] == datatools.AssessmentInteraction.MODULETYPE]
 
         # get set of unique assessment modules in training set
         training_assessments = set(train_assessment_interactions['module_id'].values)
@@ -371,13 +372,13 @@ def cross_validated_auc(
         # immediately after the truncated histories of left-out students
         module_in_train_set = df['module_id'].isin(training_assessments)
         val_interactions = df[left_out & module_in_train_set & (
-            df['timestep']==truncations+1) & is_assessment_ixn]
-      
+                df['timestep'] == truncations + 1) & is_assessment_ixn]
+
         return (train_assessment_interactions, filtered_history, split_history, val_interactions)
 
     def train_models(
-        filtered_history,
-        split_history):
+            filtered_history,
+            split_history):
         """
         Train models on training set
 
@@ -392,8 +393,8 @@ def cross_validated_auc(
             models[k] = build_model(history, filtered_history, split_history=split_history)
 
     def collect_labels_and_predictions(
-        train_assessment_interactions,
-        val_interactions):
+            train_assessment_interactions,
+            val_interactions):
         """
         Collect true labels and predicted probabilities
 
@@ -457,71 +458,70 @@ def cross_validated_auc(
                 _logger.debug(y_true)
                 _logger.debug(probas_pred)
                 val_roc_auc = None
-            
-            y_pred = [1 if x>=0.5 else -1 for x in probas_pred]
-            val_acc = np.array([1 if p==t else 0 for p, t in zip(y_pred, y_true)])
+
+            y_pred = [1 if x >= 0.5 else -1 for x in probas_pred]
+            val_acc = np.array([1 if p == t else 0 for p, t in zip(y_pred, y_true)])
 
             # helpful if you want to do a sanity check on AUCs
             # but don't want to wait for all folds to finish running
             _logger.debug('Model = %s', k)
             _logger.debug('Training AUC = %f', train_roc_auc)
             _logger.debug('Validation AUC = %f', val_roc_auc)
-            _logger.debug('Validation Accuracy = %f +/- %f', np.mean(val_acc), 
-                    np.std(val_acc) / np.sqrt(len(val_acc)))
+            _logger.debug('Validation Accuracy = %f +/- %f', np.mean(val_acc),
+                          np.std(val_acc) / np.sqrt(len(val_acc)))
 
-            err[k].append((train_roc_auc, val_roc_auc, np.mean(val_acc), 
-                np.std(val_acc) / np.sqrt(len(val_acc))))
+            err[k].append((train_roc_auc, val_roc_auc, np.mean(val_acc),
+                           np.std(val_acc) / np.sqrt(len(val_acc))))
 
         return err
 
     # make train-test splits for CV runs
     if size_of_test_set > 0:
-        id_of_nontest_student_idx = history.id_of_nontest_student_idx
+        id_of_nontest_user_idx = history.id_of_nontest_user_idx
     else:
-        id_of_nontest_student_idx = history._student_inv_idx
-    kf = cross_validate.KFold(
-            len(id_of_nontest_student_idx), n_folds=num_folds, shuffle=True)
+        id_of_nontest_user_idx = history._student_inv_idx
+    #kf = KFold(len(id_of_nontest_user_idx), n_splits=num_folds, shuffle=True)
+    kf = KFold(n_splits=num_folds, shuffle=True)
 
     start_time = time.time()
+    for fold_idx, (train_user_idxes, val_user_idxes) in enumerate(kf.split(id_of_nontest_user_idx)):
+        _logger.info('Processing fold %d of %d', fold_idx + 1, num_folds)
 
-    for fold_idx, (train_student_idxes, val_student_idxes) in enumerate(kf):
-        _logger.info('Processing fold %d of %d', fold_idx+1, num_folds)
-
-        left_in_student_ids = {id_of_nontest_student_idx[student_idx] \
-                for student_idx in train_student_idxes}
-        left_out_student_ids = {id_of_nontest_student_idx[student_idx] \
-                for student_idx in val_student_idxes}
+        left_in_user_ids = {id_of_nontest_user_idx[user_idx] \
+                            for user_idx in train_user_idxes}
+        left_out_user_ids = {id_of_nontest_user_idx[user_idx] \
+                             for user_idx in val_user_idxes}
 
         train_assessment_interactions, filtered_history, split_history, val_interactions = \
-                get_training_and_validation_sets(left_in_student_ids, left_out_student_ids)
+            get_training_and_validation_sets(left_in_user_ids, left_out_user_ids)
 
         train_models(filtered_history, split_history)
 
         train_y_true, train_probas_pred, val_y_true, val_probas_pred = \
-                collect_labels_and_predictions(train_assessment_interactions, val_interactions)
-        
-        val_ixn_data[fold_idx] = (list(val_interactions.index), copy.deepcopy(val_y_true)
-                , copy.deepcopy(val_probas_pred))
+            collect_labels_and_predictions(train_assessment_interactions, val_interactions)
 
-        train_ixn_data[fold_idx] = (list(train_assessment_interactions.index), 
-                copy.deepcopy(train_y_true), copy.deepcopy(train_probas_pred))
+        val_ixn_data[fold_idx] = (list(val_interactions.index), copy.deepcopy(val_y_true)
+                                  , copy.deepcopy(val_probas_pred))
+
+        train_ixn_data[fold_idx] = (list(train_assessment_interactions.index),
+                                    copy.deepcopy(train_y_true), copy.deepcopy(train_probas_pred))
 
         err = update_err(err)
 
-        _logger.info('Running at %f seconds per fold', (time.time() - start_time) / (fold_idx+1))
+        _logger.info('Running at %f seconds per fold', (time.time() - start_time) / (fold_idx + 1))
 
     if size_of_test_set > 0:
         _logger.info('Computing test AUCs...')
-        all_student_ids = set(history._student_idx.keys())
-        nontest_student_ids = set(history.id_of_nontest_student_idx.values())
+        all_user_ids = set(history._user_idx.keys())
+        nontest_user_ids = set(history.id_of_nontest_user_idx.values())
         train_assessment_interactions, filtered_history, split_history, val_interactions = \
-                get_training_and_validation_sets(
-                        nontest_student_ids, all_student_ids - nontest_student_ids)
+            get_training_and_validation_sets(
+                nontest_user_ids, all_user_ids - nontest_user_ids)
 
         train_models(filtered_history, split_history)
 
         train_y_true, train_probas_pred, val_y_true, val_probas_pred = \
-                collect_labels_and_predictions(train_assessment_interactions, val_interactions)
+            collect_labels_and_predictions(train_assessment_interactions, val_interactions)
 
         err = update_err(err)
 
@@ -529,7 +529,5 @@ def cross_validated_auc(
         err = {k: v[:-1] for k, v in err.iteritems()}
     else:
         test_err = None
-    
 
     return EvalResults(err, train_ixn_data, val_ixn_data, raw_test_results=test_err)
-

@@ -100,7 +100,7 @@ def gradient_descent(
             fd = [] # gradient components computed with finite difference method
             cf = [] # gradient components computed with closed form expression
             for i, c in enumerate(v.ravel()):
-                for _ in xrange(num_samples):
+                for _ in range(num_samples):
                     nparams = copy.deepcopy(params)
                     delta = epsilon * c
 
@@ -144,7 +144,7 @@ def gradient_descent(
     start_time = time.time()
 
     rel_diff = 2 * ftol # arbitrary starting point (should be greater than ftol)
-    for iter_idx in xrange(max_iter):
+    for iter_idx in range(max_iter):
         g, cst = grads(params)
 
         # don't use "for k, v in g.iteritems()", because we may be computing gradients
@@ -338,17 +338,17 @@ class EmbeddingMAPEstimator(object):
         param_vals = np.concatenate([v.ravel() for v in params.itervalues()], axis=0)
 
         (
-            student_idxes_for_assessment_ixns,
+            user_idxes_for_assessment_ixns,
             assessment_idxes_for_assessment_ixns, _) = assessment_interactions
             
         (
-            student_idxes_for_lesson_ixns,
+            user_idxes_for_lesson_ixns,
             lesson_idxes_for_lesson_ixns,
             times_since_prev_ixn_for_lesson_ixns) = lesson_interactions
-        num_lesson_ixns = len(student_idxes_for_lesson_ixns)
+        num_lesson_ixns = len(user_idxes_for_lesson_ixns)
         lesson_ixns_participation_matrix_entries = np.ones(num_lesson_ixns)
         
-        num_assessment_ixns = len(student_idxes_for_assessment_ixns)
+        num_assessment_ixns = len(user_idxes_for_assessment_ixns)
         assessment_ixns_participation_matrix_entries = np.ones(num_assessment_ixns)
         assessment_ixn_idxes = np.arange(num_assessment_ixns)
 
@@ -362,13 +362,13 @@ class EmbeddingMAPEstimator(object):
             shape=(num_assessments, num_assessment_ixns)).tocsr()
         student_participation_in_assessment_ixns = sparse.coo_matrix(
             (assessment_ixns_participation_matrix_entries,
-                (student_idxes_for_assessment_ixns, assessment_ixn_idxes)),
+                (user_idxes_for_assessment_ixns, assessment_ixn_idxes)),
             shape=(num_students_by_timesteps, num_assessment_ixns)).tocsr()
 
         num_timesteps = model.history.duration()
         student_bias_participation_in_assessment_ixns = sparse.coo_matrix(
             (assessment_ixns_participation_matrix_entries,
-                (student_idxes_for_assessment_ixns // num_timesteps,
+                (user_idxes_for_assessment_ixns // num_timesteps,
                     assessment_ixn_idxes)),
             shape=(num_students_by_timesteps // num_timesteps, num_assessment_ixns)).tocsr()
 
@@ -394,11 +394,11 @@ class EmbeddingMAPEstimator(object):
         lesson_ixn_idxes = np.arange(num_lesson_ixns)
         curr_student_participation_in_lesson_ixns = sparse.coo_matrix(
             (lesson_ixns_participation_matrix_entries,
-                (student_idxes_for_lesson_ixns, lesson_ixn_idxes)),
+                (user_idxes_for_lesson_ixns, lesson_ixn_idxes)),
             shape=(num_students_by_timesteps, num_lesson_ixns)).tocsr()
         prev_student_participation_in_lesson_ixns = sparse.coo_matrix(
             (lesson_ixns_participation_matrix_entries,
-                (student_idxes_for_lesson_ixns - 1, lesson_ixn_idxes)),
+                (user_idxes_for_lesson_ixns - 1, lesson_ixn_idxes)),
             shape=(num_students_by_timesteps, num_lesson_ixns)).tocsr()
 
         if not model.using_prereqs:
@@ -613,10 +613,10 @@ class EmbeddingMAPEstimator(object):
 
         # manually pin student state after last interaction 
         # lack of interactions => no drift likelihoods in objective function to pin students
-        for student_id, t in timestep_of_last_interaction.iteritems():
-            student_idx = model.history.idx_of_student_id(student_id)
-            params[models.STUDENT_EMBEDDINGS][student_idx, :, t:] = \
-                    params[models.STUDENT_EMBEDDINGS][student_idx, :, t][:, None]
+        for user_id, t in timestep_of_last_interaction.iteritems():
+            user_idx = model.history.idx_of_user_id(user_id)
+            params[models.STUDENT_EMBEDDINGS][user_idx, :, t:] = \
+                    params[models.STUDENT_EMBEDDINGS][user_idx, :, t][:, None]
 
         model.student_embeddings = params[models.STUDENT_EMBEDDINGS]
         model.assessment_embeddings = params[models.ASSESSMENT_EMBEDDINGS]
@@ -711,16 +711,16 @@ class MIRTMAPEstimator(object):
             split_history = self.split_history
         assessment_interactions = split_history.assessment_interactions
 
-        student_idxes_of_ixns, assessment_idxes_of_ixns, outcomes = assessment_interactions
+        user_idxes_of_ixns, assessment_idxes_of_ixns, outcomes = assessment_interactions
         # TODO: explain
-        student_idxes_of_ixns = student_idxes_of_ixns // model.history.duration()
-        assessment_interactions = student_idxes_of_ixns, assessment_idxes_of_ixns, outcomes
+        user_idxes_of_ixns = user_idxes_of_ixns // model.history.duration()
+        assessment_interactions = user_idxes_of_ixns, assessment_idxes_of_ixns, outcomes
         
-        num_ixns = len(student_idxes_of_ixns)
+        num_ixns = len(user_idxes_of_ixns)
         num_students = model.history.num_students()
         student_participation = sparse.coo_matrix(
             (np.ones(num_ixns), 
-                (student_idxes_of_ixns, np.arange(0, num_ixns, 1))), 
+                (user_idxes_of_ixns, np.arange(0, num_ixns, 1))), 
             shape=(num_students, num_ixns)).tocsr()
         num_assessments = model.history.num_assessments()
         assessment_participation = sparse.coo_matrix(
@@ -781,10 +781,10 @@ class MIRTMAPEstimator(object):
 
             assessment_offsets = params[last_assessment_factor_idx:]
 
-            student_idxes_of_ixns, assessment_idxes_of_ixns, outcomes = assessment_interactions
+            user_idxes_of_ixns, assessment_idxes_of_ixns, outcomes = assessment_interactions
             outcomes = outcomes[:, None]
 
-            student_factors_of_ixns = student_factors[student_idxes_of_ixns, :]
+            student_factors_of_ixns = student_factors[user_idxes_of_ixns, :]
             assessment_factors_of_ixns = assessment_factors[assessment_idxes_of_ixns, :]
             assessment_offsets_of_ixns = assessment_offsets[assessment_idxes_of_ixns][:, None]
 
