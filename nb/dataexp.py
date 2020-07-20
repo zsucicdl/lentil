@@ -1,101 +1,37 @@
-#%%
+# %%
 
 from __future__ import division
 
-from collections import defaultdict
-import pickle
 import os
-import sys
 
-from matplotlib import pyplot as plt
-import pygraphviz as pgv
 import numpy as np
 import pandas as pd
-
+import pygraphviz as pgv
 import seaborn as sns
+from matplotlib import pyplot as plt
+
 sns.set_style('whitegrid')
 
-from lentil import datatools
-
-
-def interaction_history_from_assistments_data_set(
-        data,
-        duration_column='timestep',
-        module_id_column='problem_id'):
-    """
-    Parse dataframe of assistments interactions into an interaction history
-
-    :param pd.DataFrame assistments_data: A raw history from assistments
-    :param str duration_column: Column to use as interaction duration
-    :param str module_id_column: Column to use as module_id
-    :rtype: datatools.InteractionHistory
-    :return: An interaction history
-    """
-    # sort by order_id
-    data.sort_values(by='order_id', inplace=True, axis=0)
-
-    # get relevant columns and rename them
-    data = data[['user_id', 'correct', duration_column, module_id_column]]
-    data.columns = ['user_id', 'outcome', 'duration', 'module_id']
-
-    # only keep interactions with binary outcomes and positive response times
-    data = data[((data['outcome'] == 1) | (data['outcome'] == 0)) & (data['duration'] > 0)]
-
-    # cast outcomes from int to bool
-    data['outcome'] = data['outcome'].apply(lambda x: x == 1)
-
-    # map response times from milliseconds to seconds
-    data['duration'] = data['duration'].apply(lambda x: x / 1000)
-
-    # existing interactions are all assessment interactions
-    data['module_type'] = [datatools.AssessmentInteraction.MODULETYPE] * len(data)
-
-    # add timesteps
-    timesteps = [None] * len(data)
-    student_timesteps = defaultdict(int)
-    for i, (_, ixn) in enumerate(data.iterrows()):
-        student_timesteps[ixn['user_id']] += 1
-        timesteps[i] = student_timesteps[ixn['user_id']]
-    data['timestep'] = timesteps
-
-    # add artificial lesson interactions
-    lesson_data = data.copy(deep=True)
-    lesson_data['module_type'] = [datatools.LessonInteraction.MODULETYPE] * len(data)
-
-    return datatools.InteractionHistory(
-        pd.concat([data, lesson_data]),
-        sort_by_timestep=True)
-
-
-def filter_history(history, min_num_ixns=5, max_num_ixns=sys.maxint):
-    """
-    Filter history for students with histories of bounded length,
-    and modules with enough interactions
-
-    :param datatools.InteractionHistory history: An interaction history
-    :param int min_num_ixns: Minimum number of timesteps in student history,
-        and minimum number of interactions for module
-
-    :param int max_num_ixns: Maximum number of timesteps in student history
-    :rtype: datatools.InteractionHistory
-    :return: A filtered interaction history
-    """
-    students = set(history.data['user_id'][(
-                                                   history.data['timestep'] > min_num_ixns) & (
-                                                   history.data[
-                                                       'module_type'] == datatools.AssessmentInteraction.MODULETYPE)])
-    students -= set(history.data['user_id'][history.data['timestep'] >= max_num_ixns])
-
-    modules = {module_id for module_id, group in history.data.groupby('module_id') if len(group) > min_num_ixns}
-
-    return datatools.InteractionHistory(
-        history.data[(history.data['user_id'].isin(students)) & (
-            history.data['module_id'].isin(modules))],
-        reindex_timesteps=True)
-
+from lentil.util import *
 
 history_path = '/home/zvonimir/PycharmProjects/lentil/data/skill_builder_data.csv'
-df = pd.read_csv(history_path)
+df = pd.read_csv(history_path,
+                 dtype={'order_id': int, 'assignment_id': int, 'user_id': int, 'assistment_id': int, 'problem_id': int,
+                        'original': int, 'correct': int, 'attempt_count': int, 'ms_first_response': int,
+                        'tutor_mode': 'string', 'answer_type': 'string', 'sequence_id': int, 'student_class_id': int,
+                        'position': int, 'type': 'string', 'base_sequence_id': int, 'skill_id': float,
+                        'skill_name': 'string',
+                        'teacher_id': int, 'school_id': int, 'hint_count': int, 'hint_total': int, 'overlap_time': int,
+                        'template_id': int, 'answer_id': int, 'answer_text': 'string', 'first_action': int,
+                        'bottom_hint': int, 'opportunity': int, 'opportunity_original': int
+                        },
+                 usecols=['order_id', 'assignment_id', 'user_id', 'assistment_id', 'problem_id', 'original', 'correct',
+                          'attempt_count', 'ms_first_response', 'tutor_mode', 'answer_type', 'sequence_id',
+                          'student_class_id', 'position', 'type', 'base_sequence_id', 'skill_id', 'skill_name',
+                          'teacher_id', 'school_id', 'hint_count', 'hint_total', 'overlap_time', 'template_id',
+                          'first_action', 'opportunity', ])
+print("Input done.")
+
 
 print '\n'.join(df.columns)
 
@@ -127,13 +63,12 @@ history = reduce(
     lambda acc, _: filter_history(acc, min_num_ixns=75, max_num_ixns=1000),
     range(REPEATED_FILTER), unfiltered_history)
 
-
-df=history.data
+df = history.data
 num_interactions = len(df)
 value_counts = df['module_type'].value_counts()
-#num_assessment_ixns = value_counts.get('test_mode', 0)
+# num_assessment_ixns = value_counts.get('test_mode', 0)
 num_assessment_ixns = value_counts.get(datatools.AssessmentInteraction.MODULETYPE, 0)
-#num_lesson_ixns = value_counts.get('tutor', 0)
+# num_lesson_ixns = value_counts.get('tutor', 0)
 num_lesson_ixns = value_counts.get(datatools.LessonInteraction.MODULETYPE, 0)
 
 print "Number of interactions = %d" % (num_interactions)
@@ -159,8 +94,6 @@ pass_rate = num_passes / (num_passes + num_fails)
 
 print "Overall pass rate: %f" % (pass_rate)
 
-
-
 d = []
 for _, group in df.groupby('user_id'):
     d.extend(group['timestep'].value_counts().values)
@@ -171,34 +104,28 @@ plt.ylabel('Frequency (number of timesteps)')
 plt.hist(d)
 plt.show()
 
-
-
 timestamps = pd.DatetimeIndex(df['timestamp'])
 
 print "Beginning of data set = %s" % (min(timestamps))
 print "End of data set = %s" % (max(timestamps))
 
-hours = timestamps.hour
-plt.xlabel('Hour of interaction')
-plt.ylabel('Frequency (number of interactions)')
-plt.hist(hours, bins=24)
-plt.show()
-
-# Monday=0, Sunday=6
-days = timestamps.weekday
-plt.xlabel('Day of interaction')
-plt.ylabel('Frequency (number of interactions)')
-plt.hist(days, bins=7)
-plt.show()
-
-
-
-plt.xlabel('Timestep')
-plt.ylabel('Frequency (number of interactions)')
-plt.hist(df['timestep'].values)
-plt.show()
-
-
+# hours = timestamps.hour
+# plt.xlabel('Hour of interaction')
+# plt.ylabel('Frequency (number of interactions)')
+# plt.hist(hours, bins=24)
+# plt.show()
+#
+# # Monday=0, Sunday=6
+# days = timestamps.weekday
+# plt.xlabel('Day of interaction')
+# plt.ylabel('Frequency (number of interactions)')
+# plt.hist(days, bins=7)
+# plt.show()
+#
+# plt.xlabel('Timestep')
+# plt.ylabel('Frequency (number of interactions)')
+# plt.hist(df['timestep'].values)
+# plt.show()
 
 durations = np.array([x for x in df['duration'].values])
 
@@ -207,15 +134,11 @@ plt.ylabel('Frequency (number of interactions)')
 plt.hist(np.log(durations + 1))
 plt.show()
 
-
-
 counts = df['user_id'].value_counts().values
 plt.xlabel('Number of interactions per student')
 plt.ylabel('Frequency (number of students)')
 plt.hist(counts)
 plt.show()
-
-
 
 counts = df['module_id'][df['module_type'] == datatools.LessonInteraction.MODULETYPE].value_counts().values
 
@@ -224,16 +147,12 @@ plt.ylabel('Frequency (number of lesson modules)')
 plt.hist(counts)
 plt.show()
 
-
-
 counts = df['module_id'][df['module_type'] == datatools.AssessmentInteraction.MODULETYPE].value_counts().values
 
 plt.xlabel('Number of interactions per assessment module')
 plt.ylabel('Frequency (number of assessment modules)')
 plt.hist(counts)
 plt.show()
-
-
 
 counts = df.groupby(['user_id', 'module_id']).size().values
 
@@ -242,16 +161,12 @@ plt.ylabel('Frequency (number of student-module pairs)')
 plt.hist(counts)
 plt.show()
 
-
-
 num_students_per_module = [len(group['user_id'].unique()) for _, group in df.groupby('module_id')]
 
 plt.xlabel('Number of students per module')
 plt.ylabel('Frequency (number of modules)')
 plt.hist(num_students_per_module)
 plt.show()
-
-
 
 grouped = df[df['module_type'] == datatools.AssessmentInteraction.MODULETYPE].groupby('user_id')
 num_assessments_per_student = [len(group['module_id']) for _, group in grouped]
@@ -261,8 +176,6 @@ plt.ylabel('Frequency (number of students)')
 plt.hist(num_assessments_per_student)
 plt.show()
 
-
-
 grouped = df[df['module_type'] == datatools.LessonInteraction.MODULETYPE].groupby('user_id')
 num_lessons_per_student = [len(group['module_id']) for _, group in grouped]
 
@@ -270,8 +183,6 @@ plt.xlabel('Number of lesson modules per student')
 plt.ylabel('Frequency (number of students)')
 plt.hist(num_lessons_per_student)
 plt.show()
-
-
 
 
 def get_pass_rates(grouped):
@@ -292,8 +203,6 @@ def get_pass_rates(grouped):
     return pass_rates
 
 
-
-
 grouped = df[df['module_type'] == datatools.AssessmentInteraction.MODULETYPE].groupby('user_id')
 
 plt.xlabel('Student pass rate')
@@ -301,16 +210,12 @@ plt.ylabel('Frequency (number of students)')
 plt.hist(get_pass_rates(grouped).values())
 plt.show()
 
-
-
 grouped = df[df['module_type'] == datatools.AssessmentInteraction.MODULETYPE].groupby('module_id')
 
 plt.xlabel('Assessment pass rate')
 plt.ylabel('Frequency (number of assessments)')
 plt.hist(get_pass_rates(grouped).values())
 plt.show()
-
-
 
 
 def make_flow_graph(interaction_logs):
@@ -344,19 +249,11 @@ def make_flow_graph(interaction_logs):
     return G
 
 
-
-
 G = make_flow_graph(df)
-
-
 
 flow_graph_path = os.path.join('data', 'assistments_flow_graph.dot')
 
-
-
 G.write(flow_graph_path)
-
-
 
 
 def make_conn_graph(interaction_logs):
@@ -382,16 +279,8 @@ def make_conn_graph(interaction_logs):
     return G
 
 
-
-
 G = make_conn_graph(df)
 
-
-
-conn_graph_path = os.path.join('data', 'assistments_conn_graph.dot')
-
-
+conn_graph_path = '/home/zvonimir/PycharmProjects/lentil/data/assistments_flow_graph.dot'
 
 G.write(conn_graph_path)
-
-
