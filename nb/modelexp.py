@@ -16,14 +16,42 @@ from lentil import models
 sns.set_style('whitegrid')
 
 import logging
+from lentil.util import *
 
 logging.getLogger().setLevel(logging.DEBUG)
 
-history_path = os.path.join('data', 'assistments_2009_2010.pkl')
 history_path = '/home/zvonimir/PycharmProjects/lentil/data/skill_builder_data.csv'
+df = pd.read_csv(history_path,
+                 dtype={'order_id': int, 'assignment_id': int, 'user_id': int, 'assistment_id': int, 'problem_id': int,
+                        'original': int, 'correct': int, 'attempt_count': int, 'ms_first_response': int,
+                        'tutor_mode': 'string', 'answer_type': 'string', 'sequence_id': int, 'student_class_id': int,
+                        'position': int, 'type': 'string', 'base_sequence_id': int, 'skill_id': float,
+                        'skill_name': 'string',
+                        'teacher_id': int, 'school_id': int, 'hint_count': int, 'hint_total': int, 'overlap_time': int,
+                        'template_id': int, 'answer_id': int, 'answer_text': 'string', 'first_action': int,
+                        'bottom_hint': int, 'opportunity': int, 'opportunity_original': int
+                        },
+                 usecols=['order_id', 'assignment_id', 'user_id', 'assistment_id', 'problem_id', 'original', 'correct',
+                          'attempt_count', 'ms_first_response', 'tutor_mode', 'answer_type', 'sequence_id',
+                          'student_class_id', 'position', 'type', 'base_sequence_id', 'skill_id', 'skill_name',
+                          'teacher_id', 'school_id', 'hint_count', 'hint_total', 'overlap_time', 'template_id',
+                          'first_action', 'opportunity', ])
+print("Input done.")
 
-df = pd.read_csv(history_path)
-history = datatools.InteractionHistory(pd.DataFrame(df))
+unfiltered_history = interaction_history_from_assistments_data_set(
+    df,
+    module_id_column='problem_id',
+    duration_column='ms_first_response')
+
+# apply the filter a couple of times, since removing student histories
+# may cause certain modules to drop below the min_num_ixns threshold,
+# and removing modules may cause student histories to drop below
+# the min_num_ixns threshold
+REPEATED_FILTER = 3  # number of times to repeat filtering
+history = reduce(
+    lambda acc, _: filter_history(acc, min_num_ixns=75, max_num_ixns=1000),
+    range(REPEATED_FILTER), unfiltered_history)
+
 df = history.data
 
 embedding_dimension = 2

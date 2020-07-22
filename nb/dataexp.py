@@ -251,7 +251,7 @@ def make_flow_graph(interaction_logs):
 
 G = make_flow_graph(df)
 
-flow_graph_path = os.path.join('data', 'assistments_flow_graph.dot')
+flow_graph_path = '/home/zvonimir/PycharmProjects/lentil/data/assistments_flow_graph.dot'
 
 G.write(flow_graph_path)
 
@@ -281,6 +281,6 @@ def make_conn_graph(interaction_logs):
 
 G = make_conn_graph(df)
 
-conn_graph_path = '/home/zvonimir/PycharmProjects/lentil/data/assistments_flow_graph.dot'
+conn_graph_path = '/home/zvonimir/PycharmProjects/lentil/data/assistments_conn_graph.dot'
 
 G.write(conn_graph_path)
